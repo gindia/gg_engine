@@ -447,8 +447,8 @@ PLT_DEF b32  plt_poll_events      (void);
 PLT_DEF void plt_gl_swap_buffers(void);
 PLT_DEF void plt_gl_set_vsync   (b32 is_on);
 
-PLT_DEF void plt_window_set_fullscreen(b32 is_fullscreen);
-PLT_DEF void plt_window_get_size      (i32 *w, i32 *h);
+PLT_DEF void plt_window_fullscreen(b32 is_fullscreen);
+PLT_DEF void plt_window_size      (i32 *w, i32 *h);
 
 PLT_DEF void plt_log_info (const char *fmt, ...);
 PLT_DEF void plt_log_warn (const char *fmt, ...);
@@ -609,14 +609,14 @@ plt_gl_set_vsync(b32 is_on)
 }
 
 PLT_DEF void
-plt_window_set_fullscreen(b32 is_fullscreen)
+plt_window_fullscreen(b32 is_fullscreen)
 {
   Assert(g_sys && "Forgot to init -> use plt_init_*() first.");
   SDL_SetWindowFullscreen(g_sys->window, SDL_WINDOW_FULLSCREEN_DESKTOP & is_fullscreen);
 }
 
 PLT_DEF void
-plt_window_get_size(i32 *w, i32 *h)
+plt_window_size(i32 *w, i32 *h)
 {
   Assert(g_sys && "Forgot to init -> use plt_init_*() first.");
   SDL_GetWindowSize(g_sys->window, w, h);

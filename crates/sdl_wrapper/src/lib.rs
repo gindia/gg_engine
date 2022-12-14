@@ -36,17 +36,17 @@ pub fn gl_set_vsync(on: bool) {
     }
 }
 
-pub fn window_set_fullscreen(full: bool) {
+pub fn window_fullscreen(full: bool) {
     unsafe {
-        sys::plt_window_set_fullscreen(full as i32);
+        sys::plt_window_fullscreen(full as i32);
     }
 }
 
-pub fn window_get_size() -> (i32, i32) {
+pub fn window_size() -> (i32, i32) {
     let mut w: i32 = 0;
     let mut h: i32 = 0;
 
-    unsafe { sys::plt_window_get_size(&mut w, &mut h) };
+    unsafe { sys::plt_window_size(&mut w, &mut h) };
 
     assert!(w != 0);
     assert!(h != 0);

@@ -15,7 +15,7 @@ pub mod gl {
 
 extern crate vector_math;
 
-use std::{ffi::CString, mem::size_of, ptr::null, os::raw::c_void};
+use std::{ffi::CString, mem::size_of, os::raw::c_void, ptr::null};
 
 use gl::*;
 use vector_math::*;
@@ -587,4 +587,33 @@ impl Drop for Vao {
 }
 
 #[derive(Debug)]
-pub struct FrameBuffer {}
+pub struct FrameBuffer {
+    // TODO
+}
+
+impl FrameBuffer {
+    // TODO
+}
+
+fn gl_get_error<'a>() -> Option<&'a str> {
+    unsafe {
+        match glGetError() {
+            GL_NO_ERROR => None,
+            GL_INVALID_ENUM => Some("GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag."),
+            GL_INVALID_VALUE => Some("GL_INVALID_VALUE: A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag."),
+            GL_INVALID_OPERATION => Some("GL_INVALID_OPERATION: The specified operation is not allowed in the current state. The offending command is ignored and has no other side effect than to set the error flag."),
+            GL_INVALID_FRAMEBUFFER_OPERATION => Some("GL_INVALID_FRAMEBUFFER_OPERATION: The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag."),
+            GL_OUT_OF_MEMORY => Some("GL_OUT_OF_MEMORY: There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded."),
+
+            _ => unreachable!(),
+        }
+    }
+}
+
+pub fn gl_drain_errors() {
+    let mut e = gl_get_error();
+    while e.is_some() {
+        println!("ERROR: {}", e.unwrap());
+        e = gl_get_error();
+    }
+}

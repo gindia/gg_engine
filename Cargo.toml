@@ -1,7 +1,15 @@
+[package]
+name = "gg_engine"
+version = "0.1.0"
+edition = "2021"
+
 [workspace]
 members = [
-    "sdl_wrapper",
-    "gles_wrapper",
-    "c_utils",
-    "vector_math",
+    "crates/*",
 ]
+
+[dependencies]
+c_utils      = { path = "crates/c_utils"      }
+gles_wrapper = { path = "crates/gles_wrapper" }
+sdl_wrapper  = { path = "crates/sdl_wrapper"  }
+vector_math  = { path = "crates/vector_math"  }
