@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "sdl_wrapper",
+    "gles_wrapper",
+    "c_utils",
+    "vector_math",
+]

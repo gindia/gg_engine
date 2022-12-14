@@ -1,0 +1,12 @@
+*
+
+!.gitignore
+!README
+
+!Cargo.toml
+!build.rs
+
+!examples/
+!examples/**
+!src/
+!src/**

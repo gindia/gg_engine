@@ -1,0 +1,15 @@
+*
+
+!.gitignore
+!README
+
+!Cargo.toml
+
+!c_utils/
+!c_utils/**
+!gles_wrapper/
+!gles_wrapper/**
+!sdl_wrapper/
+!sdl_wrapper/**
+!vector_math/
+!vector_math/**

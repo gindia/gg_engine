@@ -1,0 +1,1 @@
+a simple sdl2 wrapper, with only bindgen and cc as dependency.
