@@ -3,10 +3,10 @@
 
 #![allow(dead_code, unused_variables)]
 
-extern crate c_utils;
-extern crate gles_wrapper;
-extern crate sdl_wrapper;
-extern crate vector_math;
+pub extern crate c_utils;
+pub extern crate gles_wrapper;
+pub extern crate sdl_wrapper;
+pub extern crate vector_math;
 
 use gles_wrapper::*;
 use vector_math::*;
@@ -283,9 +283,9 @@ pub fn keyboard_key_hold(key: u32) -> bool {
 
 pub struct SpriteSheet {}
 
-pub struct SpriteRenderer  {}
+pub struct SpriteRenderer {}
 
-pub struct TextRenderer    {
+pub struct TextRenderer {
     font: parsers::TrueTypeFont,
     shader: Shader,
     texture: Texture,
