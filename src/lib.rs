@@ -281,15 +281,42 @@ pub fn keyboard_key_hold(key: u32) -> bool {
     keyboard.current[key as usize] != 0 && keyboard.previous[key as usize] != 0
 }
 
+/// return dt in seconds
+pub fn clock_delta_time() -> f64 {
+    let clock = unsafe { *sdl_wrapper::clock() };
+    clock.delta_time
+}
+
+pub fn clock_milliseconds_from_start() -> u64 {
+    let clock = unsafe { *sdl_wrapper::clock() };
+    clock.milliseconds
+}
+
 pub struct SpriteSheet {
     pub texture: Texture,
-    pub texture_size: Vec2,
+    pub texture_width: i32,
+    pub texture_height: i32,
     pub cell_size: i32,
 }
 
 impl SpriteSheet {
-    pub fn init(pixels: &[u8], width: i32, height: i32, cell_size: i32) {
-        todo!();
+    pub fn init<'a>(
+        pixels: &[u8],
+        width: i32,
+        height: i32,
+        channels: i32,
+        cell_size: i32,
+    ) -> Result<Self, &'a str> {
+        let texture = Texture::init(pixels.as_ptr(), width, height, channels)?;
+        let texture_width = width;
+        let texture_height = height;
+
+        Ok(Self {
+            texture,
+            texture_width,
+            texture_height,
+            cell_size,
+        })
     }
 }
 
@@ -364,8 +391,169 @@ main()
         Self { shader, vao, vbo }
     }
 
-    pub fn draw(&self, sheet: &SpriteSheet, pos: Vec2, taint: u32) {
-        todo!()
+    pub fn draw(
+        &self,
+        sheet: &SpriteSheet,
+        sprite_colomn: i32,
+        sprite_row: i32,
+        pos: Vec2,
+        rotation: f32,
+        taint: u32,
+    ) {
+        use gles_wrapper::gl::*;
+
+        let (window_width, window_height) = sdl_wrapper::window_size();
+
+        let u_space_matrix = self.shader.uniform("u_space_matrix", UnifomType::Matrix4x4);
+        let u_model = self.shader.uniform("u_model", UnifomType::Matrix4x4);
+        let u_tex0 = self.shader.uniform("u_tex0", UnifomType::I32);
+        let u_use_texture = self.shader.uniform("u_use_texture", UnifomType::I32);
+        let u_taint = self.shader.uniform("u_taint", UnifomType::Vec4);
+
+        let space_matrix = Mat4::ortho(
+            0.0,
+            window_width as f32,
+            window_height as f32,
+            0.0,
+            -1.0,
+            1.0,
+        );
+
+        let rot = Mat4::rotation_deg(rotation, 0.0, 0.0);
+        let transform = Mat4::identity()
+            .scale(Vec3 {
+                x: sheet.cell_size as f32,
+                y: sheet.cell_size as f32,
+                z: 1.0,
+            })
+            .translate(Vec3 {
+                x: pos.x + (sheet.cell_size as f32 * 0.5),
+                y: pos.y + (sheet.cell_size as f32 * 0.5),
+                z: 0.0,
+            });
+        let model = transform * rot;
+
+        self.shader.use_();
+        sheet.texture.bind(0);
+
+        u_space_matrix.update_value(&space_matrix).unwrap();
+        u_model.update_value(&model).unwrap();
+        u_tex0.update_value(0).unwrap();
+        u_use_texture.update_value(1).unwrap();
+        u_taint.update_value(rgba(taint)).unwrap();
+
+        unsafe {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+
+        let iw = 1.0 / sheet.texture_width as f32;
+        let ih = 1.0 / sheet.texture_height as f32;
+
+        let (x0, x1, y0, y1, s0, s1, t0, t1);
+        x0 = -0.5;
+        x1 = 0.5;
+        y0 = -0.5;
+        y1 = 0.5;
+        s0 = (sheet.cell_size * sprite_colomn) as f32 * iw;
+        s1 = (sheet.cell_size * (sprite_colomn + 1)) as f32 * iw;
+        t0 = (sheet.cell_size * sprite_row) as f32 * ih;
+        t1 = (sheet.cell_size * (sprite_row + 1)) as f32 * ih;
+
+        debug_assert!(
+            s0 <= 1.0,
+            "asking for non existing sprite colomn in sprite sheet"
+        );
+        debug_assert!(
+            s1 <= 1.0,
+            "asking for non existing sprite colomn in sprite sheet"
+        );
+        debug_assert!(
+            t0 <= 1.0,
+            "asking for non existing sprite row in sprite sheet"
+        );
+        debug_assert!(
+            t1 <= 1.0,
+            "asking for non existing sprite row in sprite sheet"
+        );
+
+        let quads = [
+            x1, y1, s1, t1, // 0
+            x1, y0, s1, t0, // 1
+            x0, y1, s0, t1, // 2
+            x1, y0, s1, t0, // 3
+            x0, y0, s0, t0, // 4
+            x0, y1, s0, t1, // 5
+        ];
+
+        self.vbo.update(quads.as_slice());
+        self.vao.draw_triangles();
+
+        unsafe {
+            glBindVertexArray(0);
+            glDisable(GL_BLEND);
+        }
+    }
+
+    pub fn blit_rect(&self, min: Vec2, max: Vec2, taint: u32) {
+        use gles_wrapper::gl::*;
+
+        let (window_width, window_height) = sdl_wrapper::window_size();
+
+        let u_space_matrix = self.shader.uniform("u_space_matrix", UnifomType::Matrix4x4);
+        let u_model = self.shader.uniform("u_model", UnifomType::Matrix4x4);
+        let u_use_texture = self.shader.uniform("u_use_texture", UnifomType::I32);
+        let u_taint = self.shader.uniform("u_taint", UnifomType::Vec4);
+
+        let space_matrix = Mat4::ortho(
+            0.0,
+            window_width as f32,
+            window_height as f32,
+            0.0,
+            -1.0,
+            1.0,
+        );
+
+        let model = Mat4::identity();
+
+        self.shader.use_();
+
+        u_space_matrix.update_value(&space_matrix).unwrap();
+        u_model.update_value(&model).unwrap();
+        u_use_texture.update_value(0).unwrap();
+        u_taint.update_value(rgba(taint)).unwrap();
+
+        unsafe {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+
+        let (x0, x1, y0, y1, s0, s1, t0, t1);
+        x0 = min.x;
+        x1 = max.x;
+        y0 = min.y;
+        y1 = max.y;
+        s0 = 0.0;
+        s1 = 1.0;
+        t0 = 0.0;
+        t1 = 1.0;
+
+        let quads = [
+            x1, y1, s1, t1, // 0
+            x1, y0, s1, t0, // 1
+            x0, y1, s0, t1, // 2
+            x1, y0, s1, t0, // 3
+            x0, y0, s0, t0, // 4
+            x0, y1, s0, t1, // 5
+        ];
+
+        self.vbo.update(quads.as_slice());
+        self.vao.draw_triangles();
+
+        unsafe {
+            glBindVertexArray(0);
+            glDisable(GL_BLEND);
+        }
     }
 }
 
@@ -480,7 +668,7 @@ main()
         self.texture.bind(0);
 
         let mut xpos = pos.x;
-        let mut ypos = pos.y;
+        let mut ypos = pos.y + (self.font_size as f32 * 0.5);
         let mut q;
         for c in txt.chars() {
             (q, xpos, ypos) = self.font.get_quad_and_next_position(c, xpos, ypos);
