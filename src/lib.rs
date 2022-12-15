@@ -281,9 +281,93 @@ pub fn keyboard_key_hold(key: u32) -> bool {
     keyboard.current[key as usize] != 0 && keyboard.previous[key as usize] != 0
 }
 
-pub struct SpriteSheet {}
+pub struct SpriteSheet {
+    pub texture: Texture,
+    pub texture_size: Vec2,
+    pub cell_size: i32,
+}
 
-pub struct SpriteRenderer {}
+impl SpriteSheet {
+    pub fn init(pixels: &[u8], width: i32, height: i32, cell_size: i32) {
+        todo!();
+    }
+}
+
+pub struct SpriteRenderer {
+    shader: Shader,
+    vao: Vao,
+    vbo: Vbo,
+}
+
+impl SpriteRenderer {
+    pub fn init() -> Self {
+        let shader_src = r#"
+#ifdef GL_ES
+precision lowp float;
+#endif
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(VERTEX_SHADER)
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+layout (location = 0) in vec4 in_data;
+
+out vec2 frag_uv;
+
+uniform mat4 u_space_matrix;
+uniform mat4 u_model;
+
+void
+main()
+{
+    gl_Position = u_space_matrix * u_model * vec4(in_data.xy, 0.f, 1.f);
+    frag_uv     = in_data.zw;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+#elif defined(FRAGMENT_SHADER)
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+in vec2 frag_uv;
+
+out vec4 out_frag_color;
+
+uniform vec4      u_taint;
+uniform sampler2D u_tex0;
+uniform int       u_use_texture;
+
+void
+main()
+{
+    vec4 mapped_tex;
+    if (u_use_texture == 1) {
+        mapped_tex = texture(u_tex0, frag_uv);
+    } else {
+        mapped_tex = vec4(1.0);
+    }
+
+    out_frag_color  = mapped_tex * u_taint;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+#endif
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// vim: sw=4 ft=glsl
+        "#;
+
+        let shader = Shader::init(shader_src).expect("Failed to compile the builtin shader");
+
+        let mut vao = Vao::init();
+        let vbo = Vbo::init_f32_2_2();
+        vao.bind_vbo(&vbo);
+
+        Self { shader, vao, vbo }
+    }
+
+    pub fn draw(&self, sheet: &SpriteSheet, pos: Vec2, taint: u32) {
+        todo!()
+    }
+}
 
 pub struct TextRenderer {
     font: parsers::TrueTypeFont,
