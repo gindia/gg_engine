@@ -6,7 +6,7 @@
 ///   #define PLT_IMPLEMENTATION
 ///   #include ...
 ///
-///   and don't forget to link agnist -lSDL2 -lGLESv2
+///   and don't forget to link agnist -lSDL2 -lSDL2_mixer -lGLESv2
 ///
 #pragma once
 
@@ -479,7 +479,7 @@ PLT_DEF const Clock*    plt_clock   (void);
 
 #define UNREACHABLE_CASE default: Assert(0 && "Unreachable Case!")
 
-
+// PLT_IMPLEMENTATION {{{
 #ifdef PLT_IMPLEMENTATION
 
 #include <SDL2/SDL.h>
@@ -782,4 +782,6 @@ keyboard_tick(Keyboard *keyboard)
 }
 
 #endif // PLT_IMPLEMENTATION
+// }}}
+
 // vim: sw=2 fdm=marker

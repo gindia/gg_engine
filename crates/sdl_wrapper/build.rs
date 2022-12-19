@@ -34,5 +34,5 @@ fn main() {
     println!("cargo:rerun-if-changed=src/system.c");
     println!("cargo:rerun-if-changed=src/system.h");
 
-    println!("cargo:rustc-flags=-lSDL2 -lsdl2_wrapper");
+    println!("cargo:rustc-flags=-lSDL2 -lSDL2_mixer -lsdl2_wrapper");
 }

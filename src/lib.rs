@@ -17,6 +17,7 @@ pub fn one_at_a_time_hash(key: &str) -> Hash {
 }
 
 pub type Color = u32;
+
 /// converts a hex to r, g, b, a floats from 0.0 -> 1.0
 pub fn rgba(hex: u32) -> Vec4 {
     let inv = 1.0 / 255.0;
