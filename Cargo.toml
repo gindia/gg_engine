@@ -10,6 +10,8 @@ members = [
 
 [dependencies]
 c_utils      = { path = "crates/c_utils"      }
+vector_math  = { path = "crates/vector_math"  }
 gles_wrapper = { path = "crates/gles_wrapper" }
 sdl_wrapper  = { path = "crates/sdl_wrapper"  }
-vector_math  = { path = "crates/vector_math"  }
+
+#[target.'cfg(target_arch = "linux")'.dependencies]

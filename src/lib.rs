@@ -693,3 +693,10 @@ main()
         }
     }
 }
+
+pub fn read_res<'a>(name: &str) -> Result<Vec<u8>, &'a str> {
+    match std::fs::read(format!("res/{}", name).as_str()) {
+        Ok(r) => Ok(r),
+        Err(_) => Err("Failed to read_res"),
+    }
+}

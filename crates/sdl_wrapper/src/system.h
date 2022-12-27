@@ -440,6 +440,10 @@ typedef struct {
   f64 delta_time; // the last increment between the last frame and currnet frame in seconds.
 }Clock;
 
+typedef void Chunk;
+typedef void Music;
+
+// statically linked gles2 lib
 PLT_DEF void plt_init_gles2_static(const char *window_name, i32 width, i32 height);
 PLT_DEF void plt_quit             (void);
 PLT_DEF b32  plt_poll_events      (void);
@@ -462,6 +466,20 @@ PLT_DEF const Mouse*    plt_mouse   (void);
 PLT_DEF const Keyboard* plt_keyboard(void);
 PLT_DEF const Clock*    plt_clock   (void);
 
+
+PLT_DEF Chunk * plt_chunk_load(const u8 *data, size_t size);
+PLT_DEF void    plt_chunk_free(Chunk *chunk);
+// If the specified channel is -1, play on the first free channel (and return  -1 without playing anything new if no free channel was available).
+// If `loops` is greater than zero, loop the sound that many times. If `loops` is -1, loop "infinitely" (~65000 times).
+// returns:  which channel was used to play the sound, or -1 if sound could not be played.
+PLT_DEF i32     plt_channel_play(i32 channel, Chunk *chunk, i32 loops);
+// If the specified channel is -1, all channels are checked, and this function returns the number of channels currently playing.
+PLT_DEF i32     plt_channel_is_playing(i32 channel);
+
+//PLT_DEF i32 plt_music_play();
+//PLT_DEF Music * plt_music_load(const u8 *data, size_t size);
+//PLT_DEF void    plt_music_free(Music *music);
+
 #define UNUSED(x) ((void)(x))
 
 #ifdef DEBUG
@@ -483,12 +501,11 @@ PLT_DEF const Clock*    plt_clock   (void);
 #ifdef PLT_IMPLEMENTATION
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_audio.h>
+#include <SDL2/SDL_mixer.h>
 
 static struct System {
   SDL_Window    *window;
   SDL_GLContext gl_context;
-  //b32           is_fullscreen;
 
   Mouse    mouse;
   Keyboard keyboard;
@@ -502,10 +519,14 @@ internal void keyboard_tick(Keyboard *keyboard);
 PLT_DEF void
 plt_init_gles2_static(const char *window_name, i32 width, i32 height)
 {
-  Assert(SDL_Init(SDL_INIT_VIDEO) == 0);
+  Assert(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) == 0);
 
   g_sys = malloc(sizeof(*g_sys));
   memset(g_sys, 0, sizeof(*g_sys));
+
+  ////////////////
+  ///// init video
+  ////////////////
 
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -534,6 +555,19 @@ plt_init_gles2_static(const char *window_name, i32 width, i32 height)
   g_sys->gl_context = SDL_GL_CreateContext(g_sys->window);
   Assert(g_sys->gl_context);
   SDL_GL_SetSwapInterval(1); // Enable vsync
+
+  ////////////////
+  ///// init audio
+  ////////////////
+
+  i32 frequency = MIX_DEFAULT_FREQUENCY;
+  u16 format = MIX_DEFAULT_FORMAT;
+  //i32 nchannels = 8; // MIX_DEFAULT_CHANNELS;
+  i32 nchannels =  MIX_DEFAULT_CHANNELS;
+  i32 chunksize = 1024;
+  Assert((Mix_OpenAudioDevice(frequency, format, nchannels, chunksize, NULL,
+          SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE) == 0)
+      && "failed to open audio device");
 }
 
 PLT_DEF void
@@ -779,6 +813,31 @@ keyboard_tick(Keyboard *keyboard)
     keyboard->previous[i] = keyboard->current[i];
     keyboard->current[i] = 0;
   }
+}
+
+PLT_DEF Chunk *
+plt_chunk_load(const u8 *data, size_t size)
+{
+  return (Chunk*)Mix_QuickLoad_RAW((u8*)data, size);
+}
+
+PLT_DEF void
+plt_chunk_free(Chunk *chunk)
+{
+  Mix_FreeChunk((Mix_Chunk*)chunk);
+}
+
+PLT_DEF i32
+plt_channel_play(i32 channel, Chunk *chunk, i32 loops)
+{
+  return Mix_PlayChannel(channel, (Mix_Chunk*)chunk, loops);
+}
+
+// If the specified channel is -1, all channels are checked, and this function returns the number of channels currently playing.
+PLT_DEF i32
+plt_channel_is_playing(i32 channel)
+{
+  return Mix_Playing(channel);
 }
 
 #endif // PLT_IMPLEMENTATION

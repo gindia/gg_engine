@@ -1,1 +1,3 @@
 a simple sdl2 wrapper, with only bindgen and cc as dependency.
+
+Links agninst SDL2 & SDL2_mixer
