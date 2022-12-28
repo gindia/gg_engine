@@ -700,3 +700,46 @@ pub fn read_res<'a>(name: &str) -> Result<Vec<u8>, &'a str> {
         Err(_) => Err("Failed to read_res"),
     }
 }
+
+pub mod audio {
+    use crate::sdl_wrapper::*;
+
+    pub struct Audio {
+        chunk: *mut sys::Chunk,
+    }
+
+    impl Audio {
+        pub fn init(raw_data: &[u8]) -> Self {
+            let chunk = unsafe { sys::plt_chunk_load(raw_data.as_ptr(), raw_data.len()) };
+            Self { chunk }
+        }
+
+        /// - If the specified `channel` is -1, play on the first free channel (and return -1 without playing anything new if no free channel was available).
+        /// - If `loops` is greater than zero, loop the sound that many times. If `loops` is -1, loop "infinitely" (~65000 times).
+        /// - `returns`  which channel was used to play the sound, or -1 if sound could not be played.
+        pub fn play(&self, channel: i32, loops: i32) -> i32 {
+            unsafe { sys::plt_channel_play(channel, self.chunk, loops) }
+        }
+    }
+
+    impl Drop for Audio {
+        fn drop(&mut self) {
+            unsafe {
+                sys::plt_chunk_free(self.chunk);
+            }
+        }
+    }
+
+    pub struct Channels();
+    impl Channels {
+        pub fn is_playing(channel: i32) -> bool {
+            let r = unsafe { sys::plt_channel_is_playing(channel) };
+            r != 0
+        }
+
+        pub fn any_playing() -> bool {
+            let r = unsafe { sys::plt_channel_is_playing(-1) };
+            r != 0
+        }
+    }
+}

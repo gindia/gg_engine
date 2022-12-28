@@ -2,16 +2,12 @@ extern crate gg_engine;
 
 use gg_engine::*;
 
-use gg_engine::sdl_wrapper::audio;
-
 fn main() -> Result<(), &'static str> {
     sdl_wrapper::init_gles2_static("window", 1600, 900);
 
-    let raw = std::fs::read("/home/user/Downloads/mixkit-retro-game-notification-212.wav")
-        .expect("did not find the .wav file to test audio chunk");
+    let raw_chunk = read_res("mixkit-retro-game-notification-212-edit.wav")?;
 
-    let chunk = audio::Chunk::init(raw.as_slice());
-
+    let chunk = audio::Audio::init(raw_chunk.as_slice());
 
     'main_loop: while sdl_wrapper::poll_events() {
         if keyboard_key_clicked(sdl_wrapper::sys::KEY_ESCAPE) {

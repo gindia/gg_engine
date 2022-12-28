@@ -1,2 +1,6 @@
+NOTE:
+  - In order to be able to run the examples that requiers some resources (assets), make a `res` dir at root, and add the missing files to it [Copyright Reasons].
+  - In case of audio pops make sure the the end of an audio chunk is zerod/muted.
+
 TODO:
 (27:DEC:2022) Handle the windows SDL2/SDL2_mixer bindings.

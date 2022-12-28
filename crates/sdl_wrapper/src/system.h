@@ -560,14 +560,27 @@ plt_init_gles2_static(const char *window_name, i32 width, i32 height)
   ///// init audio
   ////////////////
 
-  i32 frequency = MIX_DEFAULT_FREQUENCY;
-  u16 format = MIX_DEFAULT_FORMAT;
-  //i32 nchannels = 8; // MIX_DEFAULT_CHANNELS;
-  i32 nchannels =  MIX_DEFAULT_CHANNELS;
-  i32 chunksize = 1024;
-  Assert((Mix_OpenAudioDevice(frequency, format, nchannels, chunksize, NULL,
-          SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE) == 0)
-      && "failed to open audio device");
+#ifdef DEBUG
+  i32 number_of_devices = SDL_GetNumAudioDevices(0);
+  for ( i32 i = 0
+      ; i < number_of_devices
+      ; i ++ )
+  {
+    plt_log_info("audio device [%s]", SDL_GetAudioDeviceName(i, 0));
+  }
+#endif
+
+  i32 audio_device_success;
+
+  i32 frequency = 48000;
+  u16 format    = AUDIO_S16SYS;
+  i32 nchannels = 2;            // Stereo
+  i32 chunksize = 1024;         // 2048, 4096
+
+  audio_device_success = Mix_OpenAudioDevice(frequency, format, nchannels, chunksize, NULL,
+      SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+
+  Assert((audio_device_success == 0) && "failed to open audio device");
 }
 
 PLT_DEF void
@@ -576,6 +589,9 @@ plt_quit(void)
   Assert(g_sys && "Forgot to init -> use plt_init_*() first.");
   SDL_GL_DeleteContext(g_sys->gl_context);
   SDL_DestroyWindow(g_sys->window);
+
+  Mix_CloseAudio();
+
   SDL_Quit();
   free(g_sys);
 }
@@ -803,7 +819,9 @@ mouse_tick(Mouse *mouse)
 internal void
 keyboard_tick(Keyboard *keyboard)
 {
-  for ( size_t i = 0 ; i < SDL_NUM_SCANCODES ; i ++ )
+  for ( size_t i = 0
+      ; i < SDL_NUM_SCANCODES
+      ; i ++ )
   {
     if (keyboard->previous[i] && keyboard->current[i])
     {
